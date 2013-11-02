@@ -12,6 +12,8 @@ var raycaster;
 var rayCube;
 var ray;
 
+var crossairSprite;
+
 var cubes = [];
 var tweens = [];
 //var timeline = new TimelineLite({ onComplete:function() { console.log('done'); } });
@@ -22,6 +24,7 @@ animate();
 
 function init() {
   container = document.createElement( 'div' );
+  container.className = 'blurred';
   document.body.appendChild( container );
 
   // camera
@@ -160,6 +163,19 @@ function init() {
   stats = new Stats();
   container.appendChild( stats.domElement );
 
+
+  var crossairTexture = THREE.ImageUtils.loadTexture( 'textures/disc.png' );
+  
+  // suggested- alignment: THREE.SpriteAlignment.center  for targeting-style icon
+  //        alignment: THREE.SpriteAlignment.topLeft for cursor-pointer style icon
+  var crossairMaterial = new THREE.SpriteMaterial( { map: crossairTexture, useScreenCoordinates: true, alignment: THREE.SpriteAlignment.center } );
+  crossairSprite = new THREE.Sprite( crossairMaterial );
+  crossairSprite.scale.set( 16, 16, 1 );
+  crossairSprite.position.set(window.innerWidth / 2, window.innerHeight / 2, 0);
+  scene.add(crossairSprite);
+
+
+
   // axis lines
   var lineGeometry = new THREE.Geometry();
   var vertArray = lineGeometry.vertices;
@@ -189,6 +205,7 @@ function init() {
   window.addEventListener( 'resize', onWindowResize, false );
   window.addEventListener('click', onDocumentClick, false);
 
+
   //TweenLite.ticker.addEventListener("tick", animate);
   //timeline.insertMultiple(tweens, 0, 'start', 0.01);
 }
@@ -216,6 +233,7 @@ function lensFlareUpdateCallback( object ) {
 
 function onWindowResize( event ) {
   renderer.setSize( window.innerWidth, window.innerHeight );
+  crossairSprite.position.set(window.innerWidth / 2, window.innerHeight / 2, 0);
 
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();

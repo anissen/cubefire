@@ -9,10 +9,12 @@ function lockPointer(controls) {
       if ( document.pointerLockElement === element || document.mozPointerLockElement === element || document.webkitPointerLockElement === element ) {
 
         controls.enabled = true;
+        container.className = '';
         blocker.style.display = 'none';
       } else {
         controls.enabled = false;
 
+        container.className = 'blurred';
         blocker.style.display = '-webkit-box';
         blocker.style.display = '-moz-box';
         blocker.style.display = 'box';
