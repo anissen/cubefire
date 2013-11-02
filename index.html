@@ -90,7 +90,7 @@
       var INTERSECTED;
       var projector;
       var raycaster;
-      var mouse = new THREE.Vector2();
+      var mouse = new THREE.Vector3();
 
       var objects = [];
 
@@ -349,9 +349,36 @@
 				stats = new Stats();
 				container.appendChild( stats.domElement );
 
+
+        var lineGeometry = new THREE.Geometry();
+        var vertArray = lineGeometry.vertices;
+        vertArray.push(new THREE.Vector3(0,10,0), new THREE.Vector3(100,10,0));
+        lineGeometry.computeLineDistances();
+        var lineMaterial = new THREE.LineBasicMaterial( { color: 0xcc0000 } );
+        var line = new THREE.Line( lineGeometry, lineMaterial );
+        scene.add(line);
+
+        var lineGeometry = new THREE.Geometry();
+        var vertArray = lineGeometry.vertices;
+        vertArray.push(new THREE.Vector3(0,10,0), new THREE.Vector3(0,110,0));
+        lineGeometry.computeLineDistances();
+        var lineMaterial = new THREE.LineBasicMaterial( { color: 0x00cc00 } );
+        var line = new THREE.Line( lineGeometry, lineMaterial );
+        scene.add(line);
+
+        var lineGeometry = new THREE.Geometry();
+        var vertArray = lineGeometry.vertices;
+        vertArray.push(new THREE.Vector3(0,10,0), new THREE.Vector3(0,10,100));
+        lineGeometry.computeLineDistances();
+        var lineMaterial = new THREE.LineBasicMaterial( { color: 0x0000cc } );
+        var line = new THREE.Line( lineGeometry, lineMaterial );
+        scene.add(line);
+
+
 				// events
 				window.addEventListener( 'resize', onWindowResize, false );
         window.addEventListener( 'mousemove', onDocumentMouseMove, false );
+        window.addEventListener('click', onDocumentClick, false);
 
         //TweenLite.ticker.addEventListener("tick", animate);
         //timeline.insertMultiple(tweens, 0, 'start', 0.01);
@@ -388,6 +415,20 @@
 
         mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
         mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+        mouse.z = 1.0;
+      }
+
+      function onDocumentClick(event) {
+        var vector = new THREE.Vector3( mouse.x, mouse.y, mouse.z );
+        projector.unprojectVector(vector, camera);
+
+        var lineGeometry = new THREE.Geometry();
+        var vertArray = lineGeometry.vertices;
+        vertArray.push(controls.getObject().position, vector.sub(controls.getObject().position));
+        lineGeometry.computeLineDistances();
+        var lineMaterial = new THREE.LineBasicMaterial( { color: 0xcc0000 } );
+        var line = new THREE.Line( lineGeometry, lineMaterial );
+        scene.add(line);
       }
 
 			function animate() {
@@ -425,11 +466,17 @@
 
         // === FIND INTERSECTIONS ===
 
+        /*
+        var pLocal = new THREE.Vector3( 0, 0, -1 );
+        var pWorld = pLocal.applyMatrix4( camera.matrixWorld );
+        var dir = pWorld.sub( camera.position ).normalize();
+        */
+
         // find intersections
-        var vector = new THREE.Vector3( mouse.x, mouse.y, 1 );
+        var vector = new THREE.Vector3( mouse.x, mouse.y, mouse.z );
         projector.unprojectVector( vector, camera );
 
-        raycaster.set( camera.position, vector.sub( camera.position ).normalize() );
+        raycaster.set( controls.getObject().position, vector.sub(controls.getObject().position).normalize() );
 
         var intersects = raycaster.intersectObjects(cubes);
 
