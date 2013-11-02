@@ -2,14 +2,11 @@
 var container, stats;
 var camera, scene, renderer;
 var clock = new THREE.Clock();
-var composer;
 var controls;
 
-var INTERSECTED;
 var projector;
 var raycaster;
 
-var rayCube;
 var ray;
 
 var crossairSprite;
@@ -17,7 +14,6 @@ var crossairSprite;
 var cubes = [];
 var tweens = [];
 //var timeline = new TimelineLite({ onComplete:function() { console.log('done'); } });
-
 
 init();
 animate();
@@ -48,57 +44,77 @@ function init() {
   raycaster = new THREE.Raycaster();
 
   // world
-  // floor
+  setupFloor();
+  setupCubes();
+  setupLights();
 
+  // renderer
+  renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true } );
+  renderer.setSize( window.innerWidth, window.innerHeight );
+  renderer.setClearColor( scene.fog.color, 1 );
+
+  container.appendChild(renderer.domElement);
+
+  //
+  renderer.gammaInput = true;
+  renderer.gammaOutput = true;
+  renderer.physicallyBasedShading = true;
+
+  // stats
+  stats = new Stats();
+  container.appendChild(stats.domElement);
+
+  setupCrossair();
+
+  // events
+  window.addEventListener( 'resize', onWindowResize, false );
+  window.addEventListener('click', onDocumentClick, false);
+
+  //TweenLite.ticker.addEventListener("tick", animate);
+  //timeline.insertMultiple(tweens, 0, 'start', 0.01);
+}
+
+function setupFloor() {
   var planeMesh = new THREE.PlaneGeometry( 2000, 2000, 100, 100 );
   planeMesh.applyMatrix( new THREE.Matrix4().makeRotationX( - Math.PI / 2 ) );
   var planeMaterial = new THREE.MeshBasicMaterial( { ambient: 0xdddddd, color: 0xdddddd, specular: 0xdddddd, shininess: 50 } );
   mesh = new THREE.Mesh(planeMesh, planeMaterial);
   scene.add( mesh );
+}
 
-  // cubes
+function setupCubes() {
   var s = 20;
   var cube = new THREE.CubeGeometry( s, s, s );
-  // var material = new THREE.MeshPhongMaterial( { ambient: 0x333333, color: 0xffffff, specular: 0xffffff, shininess: 50 } );
   var material = new THREE.MeshPhongMaterial( { ambient: 0xffffff, color: 0xffffff, specular: 0xffffff, shininess: 50 } );
 
   for (var i = 0; i < 300; i ++ ) {
-      var cubeMaterial = material.clone(); // HACK to be able to highlight a single cube
-      var mesh = new THREE.Mesh( cube, cubeMaterial );
-      mesh.position.x = Math.floor( Math.random() * 20 - 10 ) * 20;
-      mesh.position.y = Math.floor( Math.random() * 20 ) * 20 + 10;
-      mesh.position.z = Math.floor( Math.random() * 20 - 10 ) * 20;
-      mesh.scale.multiplyScalar(0.95);
-      /*
-      mesh.rotation.x = Math.random() * Math.PI;
-      mesh.rotation.y = Math.random() * Math.PI;
-      mesh.rotation.z = Math.random() * Math.PI;
-      */
-      //mesh.matrixAutoUpdate = false;
-      //mesh.updateMatrix();
+    var cubeMaterial = material.clone(); // HACK to be able to highlight a single cube
+    var mesh = new THREE.Mesh( cube, cubeMaterial );
+    mesh.position.x = Math.floor( Math.random() * 20 - 10 ) * 20;
+    mesh.position.y = Math.floor( Math.random() * 20 ) * 20 + 10;
+    mesh.position.z = Math.floor( Math.random() * 20 - 10 ) * 20;
+    mesh.scale.multiplyScalar(0.95);
 
-      scene.add(mesh);
-      cubes.push(mesh);
+    cubes.push(mesh);
 
-      var outlineMaterial2 = new THREE.MeshBasicMaterial( { color: 0x000000, side: THREE.BackSide } );
-      var outlineMesh2 = new THREE.Mesh( cube, outlineMaterial2 );
-      outlineMesh2.scale.multiplyScalar(1.1);
+    var outlineMaterial2 = new THREE.MeshBasicMaterial( { color: 0x000000, side: THREE.BackSide } );
+    var outlineMesh2 = new THREE.Mesh( cube, outlineMaterial2 );
+    outlineMesh2.scale.multiplyScalar(1.1);
 
-      mesh.add(outlineMesh2);
+    mesh.add(outlineMesh2);
 
-      /*
-      tweens.push(TweenLite.from(mesh.position, 10, { 
-        y: 100,
-        ease: Elastic.easeOut
-      }));
-*/
+    scene.add(mesh);
+
+    /*
+    tweens.push(TweenLite.from(mesh.position, 10, { 
+      y: 100,
+      ease: Elastic.easeOut
+    }));
+    */
   }
+}
 
-  var cubeGeo = new THREE.CubeGeometry(1, 1, 1);
-  var rayCubeMaterial = new THREE.MeshPhongMaterial( { ambient: 0xff00ff, color: 0xffffff, specular: 0xffffff, shininess: 50 } );
-  rayCube = new THREE.Mesh( cubeGeo, rayCubeMaterial );
-  scene.add(rayCube);
-
+function setupLights() {
   // lights
   var ambient = new THREE.AmbientLight( 0xffffff );
   // ambient.color.setHSL( 0.1, 0.3, 0.2 );
@@ -146,24 +162,9 @@ function init() {
     scene.add( lensFlare );
   }
   */
+}
 
-  // renderer
-  renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true } );
-  renderer.setSize( window.innerWidth, window.innerHeight );
-  renderer.setClearColor( scene.fog.color, 1 );
-
-  container.appendChild( renderer.domElement );
-
-  //
-  renderer.gammaInput = true;
-  renderer.gammaOutput = true;
-  renderer.physicallyBasedShading = true;
-
-  // stats
-  stats = new Stats();
-  container.appendChild( stats.domElement );
-
-
+function setupCrossair() {
   var crossairTexture = THREE.ImageUtils.loadTexture( 'textures/disc.png' );
   
   // suggested- alignment: THREE.SpriteAlignment.center  for targeting-style icon
@@ -173,41 +174,6 @@ function init() {
   crossairSprite.scale.set( 16, 16, 1 );
   crossairSprite.position.set(window.innerWidth / 2, window.innerHeight / 2, 0);
   scene.add(crossairSprite);
-
-
-
-  // axis lines
-  var lineGeometry = new THREE.Geometry();
-  var vertArray = lineGeometry.vertices;
-  vertArray.push(new THREE.Vector3(0,10,0), new THREE.Vector3(100,10,0));
-  lineGeometry.computeLineDistances();
-  var lineMaterial = new THREE.LineBasicMaterial( { color: 0xcc0000 } );
-  var line = new THREE.Line( lineGeometry, lineMaterial );
-  scene.add(line);
-
-  lineGeometry = new THREE.Geometry();
-  vertArray = lineGeometry.vertices;
-  vertArray.push(new THREE.Vector3(0,10,0), new THREE.Vector3(0,110,0));
-  lineGeometry.computeLineDistances();
-  lineMaterial = new THREE.LineBasicMaterial( { color: 0x00cc00 } );
-  line = new THREE.Line( lineGeometry, lineMaterial );
-  scene.add(line);
-
-  lineGeometry = new THREE.Geometry();
-  vertArray = lineGeometry.vertices;
-  vertArray.push(new THREE.Vector3(0,10,0), new THREE.Vector3(0,10,100));
-  lineGeometry.computeLineDistances();
-  lineMaterial = new THREE.LineBasicMaterial( { color: 0x0000cc } );
-  line = new THREE.Line( lineGeometry, lineMaterial );
-  scene.add(line);
-
-  // events
-  window.addEventListener( 'resize', onWindowResize, false );
-  window.addEventListener('click', onDocumentClick, false);
-
-
-  //TweenLite.ticker.addEventListener("tick", animate);
-  //timeline.insertMultiple(tweens, 0, 'start', 0.01);
 }
 
 /*
