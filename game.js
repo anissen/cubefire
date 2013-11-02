@@ -8,10 +8,8 @@ var controls;
 var INTERSECTED;
 var projector;
 var raycaster;
-var mouse = new THREE.Vector3();
 
-var objects = [];
-
+var rayCube;
 var ray;
 
 var cubes = [];
@@ -29,24 +27,12 @@ function init() {
   // camera
   camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 1000 );
 
-  /*
-  controls = new THREE.FlyControls( camera );
-
-  controls.movementSpeed = 2;
-  controls.domElement = container;
-  controls.rollSpeed = Math.PI / 6;
-  controls.autoForward = false;
-  controls.dragToLook = false
-  */
-
-
   ray = new THREE.Raycaster();
   ray.ray.direction.set( 0, -1, 0 );
 
-
   // scene
   scene = new THREE.Scene();
-  scene.fog = new THREE.Fog( 0x000000, 1, 500 );
+  scene.fog = new THREE.Fog( 0x000000, 1, 300 );
   //scene.fog.color.setHSL( 0.51, 0.4, 0.01 );
   scene.fog.color.setRGB( 1.0, 1.0, 1.0 );
 
@@ -85,8 +71,8 @@ function init() {
       mesh.rotation.y = Math.random() * Math.PI;
       mesh.rotation.z = Math.random() * Math.PI;
       */
-      mesh.matrixAutoUpdate = false;
-      mesh.updateMatrix();
+      //mesh.matrixAutoUpdate = false;
+      //mesh.updateMatrix();
 
       scene.add(mesh);
       cubes.push(mesh);
@@ -104,6 +90,11 @@ function init() {
       }));
 */
   }
+
+  var cubeGeo = new THREE.CubeGeometry(1, 1, 1);
+  var rayCubeMaterial = new THREE.MeshPhongMaterial( { ambient: 0xff00ff, color: 0xffffff, specular: 0xffffff, shininess: 50 } );
+  rayCube = new THREE.Mesh( cubeGeo, rayCubeMaterial );
+  scene.add(rayCube);
 
   // lights
   var ambient = new THREE.AmbientLight( 0xffffff );
@@ -196,7 +187,6 @@ function init() {
 
   // events
   window.addEventListener( 'resize', onWindowResize, false );
-  window.addEventListener( 'mousemove', onDocumentMouseMove, false );
   window.addEventListener('click', onDocumentClick, false);
 
   //TweenLite.ticker.addEventListener("tick", animate);
@@ -231,89 +221,69 @@ function onWindowResize( event ) {
   camera.updateProjectionMatrix();
 }
 
-function onDocumentMouseMove( event ) {
-  event.preventDefault();
+function onDocumentClick(event) {
+  if (!controls.enabled) return;
 
-  mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-  mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-  mouse.z = 1.0;
+  shoot();
 }
 
-function onDocumentClick(event) {
-  var vector = new THREE.Vector3( mouse.x, mouse.y, mouse.z );
-  projector.unprojectVector(vector, camera);
+function shoot() {
+  var cameraPos = controls.getObject().position;
+  var cameraDir = controls.getDirection();
 
+  // find intersections
+  var target = getShotObject(cameraPos, cameraDir);
+
+  var targetPos = (target ? target.point : cameraPos.clone().add(cameraDir.multiplyScalar(1000)));
+  var trailColor = (target ? 0x990000 : 0x000099);
+  addBulletTrail(cameraPos, targetPos, trailColor);
+
+  if (target)
+    target.object.material.ambient.setHex(0xff0000);
+}
+
+function getShotObject(pos, dir) {
+  raycaster.set(pos, dir);
+
+  var intersects = raycaster.intersectObjects(cubes);
+  return intersects[0];
+}
+
+function addBulletTrail(startPos, endPos, color) {
   var lineGeometry = new THREE.Geometry();
   var vertArray = lineGeometry.vertices;
-  vertArray.push(controls.getObject().position, vector.sub(controls.getObject().position));
+  vertArray.push(startPos, endPos);
   lineGeometry.computeLineDistances();
-  var lineMaterial = new THREE.LineBasicMaterial( { color: 0xcc0000 } );
+  var lineMaterial = new THREE.LineBasicMaterial( { color: color, linewidth: 10, fog: true } );
   var line = new THREE.Line( lineGeometry, lineMaterial );
   scene.add(line);
+}
+
+function updateControls() {
+  controls.isOnObject(false);
+
+  ray.ray.origin.copy( controls.getObject().position );
+  ray.ray.origin.y -= 10;
+
+  var intersections = ray.intersectObjects(cubes);
+  if (intersections.length > 0) {
+    var distance = intersections[0].distance;
+    if (distance > 0 && distance < 10) {
+      controls.isOnObject(true);
+    }
+  }
+
+  controls.update(clock.getElapsedTime());
 }
 
 function animate() {
   requestAnimationFrame( animate );
 
+  updateControls();
   render();
   stats.update();
 }
 
 function render() {
-  var delta = clock.getDelta();
-
-  //controls.update( delta );
-
-  /*
-  cubes.forEach(function(cube) {
-    cube.updateMatrix();
-  });
-  */
-
-  controls.isOnObject( false );
-
-  ray.ray.origin.copy( controls.getObject().position );
-  ray.ray.origin.y -= 10;
-
-  var intersections = ray.intersectObjects( cubes );
-  if ( intersections.length > 0 ) {
-    var distance = intersections[ 0 ].distance;
-    if ( distance > 0 && distance < 10 ) {
-      controls.isOnObject( true );
-    }
-  }
-
-  controls.update(clock.getElapsedTime());
-
-  // === FIND INTERSECTIONS ===
-
-  /*
-  var pLocal = new THREE.Vector3( 0, 0, -1 );
-  var pWorld = pLocal.applyMatrix4( camera.matrixWorld );
-  var dir = pWorld.sub( camera.position ).normalize();
-  */
-
-  // find intersections
-  var vector = new THREE.Vector3( mouse.x, mouse.y, mouse.z );
-  projector.unprojectVector( vector, camera );
-
-  raycaster.set( controls.getObject().position, vector.sub(controls.getObject().position).normalize() );
-
-  var intersects = raycaster.intersectObjects(cubes);
-
-  if ( intersects.length > 0 ) {
-    if (INTERSECTED != intersects[0].object) {
-      if (INTERSECTED) INTERSECTED.material.emissive.setHex(INTERSECTED.currentHex);
-      INTERSECTED = intersects[0].object;
-      INTERSECTED.currentHex = INTERSECTED.material.emissive.getHex();
-      INTERSECTED.material.emissive.setHex( 0xff0000);
-    }
-  } else {
-    if (INTERSECTED ) INTERSECTED.material.emissive.setHex(INTERSECTED.currentHex );
-    INTERSECTED = null;
-  }
-
-  // === FIND INTERSECTIONS ===
-
   renderer.render( scene, camera );
 }
