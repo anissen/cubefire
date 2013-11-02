@@ -79,6 +79,7 @@ function init() {
       mesh.position.x = Math.floor( Math.random() * 20 - 10 ) * 20;
       mesh.position.y = Math.floor( Math.random() * 20 ) * 20 + 10;
       mesh.position.z = Math.floor( Math.random() * 20 - 10 ) * 20;
+      mesh.scale.multiplyScalar(0.95);
       /*
       mesh.rotation.x = Math.random() * Math.PI;
       mesh.rotation.y = Math.random() * Math.PI;
@@ -92,7 +93,7 @@ function init() {
 
       var outlineMaterial2 = new THREE.MeshBasicMaterial( { color: 0x000000, side: THREE.BackSide } );
       var outlineMesh2 = new THREE.Mesh( cube, outlineMaterial2 );
-      outlineMesh2.scale.multiplyScalar(1.05);
+      outlineMesh2.scale.multiplyScalar(1.1);
 
       mesh.add(outlineMesh2);
 
@@ -106,22 +107,23 @@ function init() {
 
   // lights
   var ambient = new THREE.AmbientLight( 0xffffff );
-  ambient.color.setHSL( 0.1, 0.3, 0.2 );
+  // ambient.color.setHSL( 0.1, 0.3, 0.2 );
   scene.add( ambient );
 
   var dirLight = new THREE.DirectionalLight( 0xffffff, 0.125 );
   dirLight.position.set( 0, -1, 0 ).normalize();
   scene.add( dirLight );
 
-  dirLight.color.setHSL( 0.1, 0.7, 0.5 );
+  // dirLight.color.setHSL( 0.1, 0.7, 0.5 );
 
+  /*
   // lens flares
   var textureFlare0 = THREE.ImageUtils.loadTexture( "textures/lensflare/lensflare0.png" );
   var textureFlare2 = THREE.ImageUtils.loadTexture( "textures/lensflare/lensflare2.png" );
   var textureFlare3 = THREE.ImageUtils.loadTexture( "textures/lensflare/lensflare3.png" );
 
-  // addLight( 0.55, 0.9, 0.5, 100, 0, 100 );
-  // addLight( 0.08, 0.8, 0.5,    0, 0, 100 );
+  addLight( 0.55, 0.9, 0.5, 100, 0, 100 );
+  addLight( 0.08, 0.8, 0.5,    0, 0, 100 );
   addLight( 0.995, 0.5, 0.9, 100, 100, 100 );
 
   function addLight( h, s, l, x, y, z ) {
@@ -149,6 +151,7 @@ function init() {
 
     scene.add( lensFlare );
   }
+  */
 
   // renderer
   renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true } );
@@ -158,7 +161,6 @@ function init() {
   container.appendChild( renderer.domElement );
 
   //
-
   renderer.gammaInput = true;
   renderer.gammaOutput = true;
   renderer.physicallyBasedShading = true;
@@ -167,7 +169,7 @@ function init() {
   stats = new Stats();
   container.appendChild( stats.domElement );
 
-
+  // axis lines
   var lineGeometry = new THREE.Geometry();
   var vertArray = lineGeometry.vertices;
   vertArray.push(new THREE.Vector3(0,10,0), new THREE.Vector3(100,10,0));
@@ -176,22 +178,21 @@ function init() {
   var line = new THREE.Line( lineGeometry, lineMaterial );
   scene.add(line);
 
-  var lineGeometry = new THREE.Geometry();
-  var vertArray = lineGeometry.vertices;
+  lineGeometry = new THREE.Geometry();
+  vertArray = lineGeometry.vertices;
   vertArray.push(new THREE.Vector3(0,10,0), new THREE.Vector3(0,110,0));
   lineGeometry.computeLineDistances();
-  var lineMaterial = new THREE.LineBasicMaterial( { color: 0x00cc00 } );
-  var line = new THREE.Line( lineGeometry, lineMaterial );
+  lineMaterial = new THREE.LineBasicMaterial( { color: 0x00cc00 } );
+  line = new THREE.Line( lineGeometry, lineMaterial );
   scene.add(line);
 
-  var lineGeometry = new THREE.Geometry();
-  var vertArray = lineGeometry.vertices;
+  lineGeometry = new THREE.Geometry();
+  vertArray = lineGeometry.vertices;
   vertArray.push(new THREE.Vector3(0,10,0), new THREE.Vector3(0,10,100));
   lineGeometry.computeLineDistances();
-  var lineMaterial = new THREE.LineBasicMaterial( { color: 0x0000cc } );
-  var line = new THREE.Line( lineGeometry, lineMaterial );
+  lineMaterial = new THREE.LineBasicMaterial( { color: 0x0000cc } );
+  line = new THREE.Line( lineGeometry, lineMaterial );
   scene.add(line);
-
 
   // events
   window.addEventListener( 'resize', onWindowResize, false );
@@ -202,6 +203,7 @@ function init() {
   //timeline.insertMultiple(tweens, 0, 'start', 0.01);
 }
 
+/*
 function lensFlareUpdateCallback( object ) {
   var f, fl = object.lensFlares.length;
   var flare;
@@ -220,6 +222,7 @@ function lensFlareUpdateCallback( object ) {
   object.lensFlares[ 2 ].y += 0.025;
   object.lensFlares[ 3 ].rotation = object.positionScreen.x * 0.5 + THREE.Math.degToRad( 45 );
 }
+*/
 
 function onWindowResize( event ) {
   renderer.setSize( window.innerWidth, window.innerHeight );

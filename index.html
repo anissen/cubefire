@@ -1,86 +1,90 @@
 <!DOCTYPE html>
-<!-- saved from url=(0049)http://threejs.org/examples/webgl_lensflares.html -->
 <html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-		<title>three.js webgl - lensflares</title>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-		<style type="text/css">
-			body {
-				background: white;
-				padding:0;
-				margin:0;
-				font-weight: bold;
-				overflow:hidden;
-			}
-			
-			#stats { position: absolute; top:0; left: 0 }
-			#stats #fps { background: transparent !important }
-			#stats #fps #fpsText { color: #aaa !important }
-			#stats #fps #fpsGraph { display: none }
+  <title>cubefire</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+  <style type="text/css">
+    body {
+      background: white;
+      padding:0;
+      margin:0;
+      font-weight: bold;
+      overflow:hidden;
+    }
+    
+    #stats { position: absolute; top:0; left: 0 }
+    #stats #fps { background: transparent !important }
+    #stats #fps #fpsText { color: #aaa !important }
+    #stats #fps #fpsGraph { display: none }
 
-      #blocker {
+    #blocker {
+      position: absolute;
 
-        position: absolute;
+      width: 100%;
+      height: 100%;
 
-        width: 100%;
-        height: 100%;
+      background-color: rgba(0,0,0,0.5);
+    }
 
-        background-color: rgba(0,0,0,0.5);
+    #instructions {
+      width: 100%;
+      height: 100%;
 
-      }
+      display: -webkit-box;
+      display: -moz-box;
+      display: box;
 
-      #instructions {
+      -webkit-box-orient: horizontal;
+      -moz-box-orient: horizontal;
+      box-orient: horizontal;
 
-        width: 100%;
-        height: 100%;
+      -webkit-box-pack: center;
+      -moz-box-pack: center;
+      box-pack: center;
 
-        display: -webkit-box;
-        display: -moz-box;
-        display: box;
+      -webkit-box-align: center;
+      -moz-box-align: center;
+      box-align: center;
 
-        -webkit-box-orient: horizontal;
-        -moz-box-orient: horizontal;
-        box-orient: horizontal;
+      color: #ffffff;
+      text-align: center;
 
-        -webkit-box-pack: center;
-        -moz-box-pack: center;
-        box-pack: center;
+      cursor: pointer;
+    }
 
-        -webkit-box-align: center;
-        -moz-box-align: center;
-        box-align: center;
+    .highlighted
+    {
+      text-shadow: 0 0 0.2em #000, 0 0 0.2em #000
+    }
 
-        color: #ffffff;
-        text-align: center;
+    .stroked
+    {
+      text-shadow:
+      -1px -1px 0 #000,
+      1px -1px 0 #000,
+      -1px 1px 0 #000,
+      1px 1px 0 #000;  
+    }
+    </style>
+  </head>
 
-        cursor: pointer;
-
-      }
-		</style>
-	</head>
-
-	<body style="">
+  <body>
     <div id="blocker">
 
       <div id="instructions">
-        <span style="font-size:40px">Click to play</span>
-        <br />
-        (W, A, S, D = Move, SPACE = Jump, MOUSE = Look around)
+        <span class="highlighted" style="font-size:46px; font-variant: small-caps;">Click to Play</span>
+        <br/>
+        <br/>
+        <span class="stroked" style="color: #cccccc;">Look around: Mouse&nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;Move: W, S, A, D&nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;Jump: Space</span>
       </div>
 
     </div>
 
-		<script src="lib/three.min.js"></script>
+    <script src="lib/three.min.js"></script>
     <script src="lib/FlyControls.js"></script>
-		<script src="lib/PointerLockControls.js"></script>
-		<script src="lib/stats.min.js"></script>
-    <!--
-    <script src="https://rawgithub.com/greensock/GreenSock-JS/master/src/uncompressed/TimelineLite.js"></script>
-    <script src="https://rawgithub.com/greensock/GreenSock-JS/master/src/uncompressed/TweenLite.js"></script>
-    <script src="https://rawgithub.com/greensock/GreenSock-JS/master/src/uncompressed/easing/EasePack.js"></script>
-    -->
-
-        <script src="pointerlock.js"></script>
-		<script src="game.js"></script>
-
-</body></html>
+    <script src="lib/PointerLockControls.js"></script>
+    <script src="lib/stats.min.js"></script>
+    <script src="pointerlock.js"></script>
+    <script src="game.js"></script>
+  </body>
+</html>
