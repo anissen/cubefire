@@ -11,6 +11,7 @@ var ray;
 
 var crossairSprite;
 
+var map = {};
 var cubes = [];
 var tweens = [];
 //var timeline = new TimelineLite({ onComplete:function() { console.log('done'); } });
@@ -52,6 +53,8 @@ function init() {
   renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true } );
   renderer.setSize( window.innerWidth, window.innerHeight );
   renderer.setClearColor( scene.fog.color, 1 );
+  renderer.shadowMapEnabled = true;
+
 
   container.appendChild(renderer.domElement);
 
@@ -75,31 +78,46 @@ function init() {
 }
 
 function setupFloor() {
-  var planeMesh = new THREE.PlaneGeometry( 2000, 2000, 100, 100 );
+  var planeMesh = new THREE.PlaneGeometry( 200, 200, 10, 10 );
   planeMesh.applyMatrix( new THREE.Matrix4().makeRotationX( - Math.PI / 2 ) );
-  var planeMaterial = new THREE.MeshBasicMaterial( { ambient: 0xdddddd, color: 0xdddddd, specular: 0xdddddd, shininess: 50 } );
+  var planeMaterial = new THREE.MeshBasicMaterial();
   mesh = new THREE.Mesh(planeMesh, planeMaterial);
+  mesh.receiveShadow = true;
   scene.add( mesh );
 }
 
 function setupCubes() {
-  var s = 20;
-  var cube = new THREE.CubeGeometry( s, s, s );
-  var material = new THREE.MeshPhongMaterial( { ambient: 0xffffff, color: 0xffffff, specular: 0xffffff, shininess: 50 } );
+  var cubeSize = 15; // 7
+  var cube = new THREE.CubeGeometry( cubeSize, cubeSize, cubeSize );
+  var material = new THREE.MeshLambertMaterial();
 
+  var mapXSize = 30;
+  var mapZSize = 30;
+  for (var i = 0; i < 100; i++) {
+    var randX = Math.floor( Math.random() * mapXSize - mapXSize / 2 );
+    var randZ = Math.floor( Math.random() * mapZSize - mapZSize / 2 );
+    map[randX+':'+randZ] = Math.floor(Math.random() * 10);
+  }
   for (var i = 0; i < 300; i ++ ) {
     var cubeMaterial = material.clone(); // HACK to be able to highlight a single cube
     var mesh = new THREE.Mesh( cube, cubeMaterial );
-    mesh.position.x = Math.floor( Math.random() * 20 - 10 ) * 20;
-    mesh.position.y = Math.floor( Math.random() * 20 ) * 20 + 10;
-    mesh.position.z = Math.floor( Math.random() * 20 - 10 ) * 20;
-    mesh.scale.multiplyScalar(0.95);
+    var randX = Math.floor( Math.random() * mapXSize - mapXSize / 2 );
+    var randZ = Math.floor( Math.random() * mapZSize - mapZSize / 2 );
+    mesh.position.x = randX * cubeSize;
+    //mesh.position.y = Math.floor( Math.random() * 20 ) * 20 + 10;
+    mesh.position.z = randZ * cubeSize;
+    var height = map[randX+':'+randZ] || 0;
+    map[randX+':'+randZ] = height + 1;
+    mesh.position.y = height * cubeSize + cubeSize / 2;
+    mesh.scale.multiplyScalar(0.99);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
 
     cubes.push(mesh);
 
-    var outlineMaterial2 = new THREE.MeshBasicMaterial( { color: 0x000000, side: THREE.BackSide } );
+    var outlineMaterial2 = new THREE.MeshBasicMaterial( { color: 0x888888, side: THREE.BackSide } );
     var outlineMesh2 = new THREE.Mesh( cube, outlineMaterial2 );
-    outlineMesh2.scale.multiplyScalar(1.1);
+    outlineMesh2.scale.multiplyScalar(1.02);
 
     mesh.add(outlineMesh2);
 
@@ -120,11 +138,15 @@ function setupLights() {
   // ambient.color.setHSL( 0.1, 0.3, 0.2 );
   scene.add( ambient );
 
-  var dirLight = new THREE.DirectionalLight( 0xffffff, 0.125 );
-  dirLight.position.set( 0, -1, 0 ).normalize();
-  scene.add( dirLight );
+  var light = new THREE.DirectionalLight( 0x444444, 3 );
+  light.position.set(-10, 100, 10);
+  light.target.position.set( 0, 0, 0 );
+  light.shadowCameraNear = 0.01;
+  light.castShadow = true;
+  light.shadowDarkness = 0.5;
+  light.shadowCameraVisible = true;
+  scene.add(light);
 
-  // dirLight.color.setHSL( 0.1, 0.7, 0.5 );
 
   /*
   // lens flares
@@ -212,14 +234,15 @@ function onDocumentClick(event) {
 }
 
 function shoot() {
-  var cameraPos = controls.getObject().position;
+  var cameraPos = controls.getObject().position.clone();
+  cameraPos.y -= 0.5;
   var cameraDir = controls.getDirection();
 
   // find intersections
   var target = getShotObject(cameraPos, cameraDir);
 
   var targetPos = (target ? target.point : cameraPos.clone().add(cameraDir.multiplyScalar(1000)));
-  var trailColor = (target ? 0x990000 : 0x000099);
+  var trailColor = (target ? 0x990000 : 0xaaaaff);
   addBulletTrail(cameraPos, targetPos, trailColor);
 
   if (target)
@@ -238,9 +261,12 @@ function addBulletTrail(startPos, endPos, color) {
   var vertArray = lineGeometry.vertices;
   vertArray.push(startPos, endPos);
   lineGeometry.computeLineDistances();
-  var lineMaterial = new THREE.LineBasicMaterial( { color: color, linewidth: 10, fog: true } );
+  var lineMaterial = new THREE.LineBasicMaterial( { color: color, linewidth: 5, fog: true } );
+  // var lineMaterial2 = new THREE.LineBasicMaterial( { color: 0x000000, linewidth: 7, fog: true } );
   var line = new THREE.Line( lineGeometry, lineMaterial );
+  // var line2 = new THREE.Line( lineGeometry, lineMaterial2 );
   scene.add(line);
+  // scene.add(line2);
 }
 
 function updateControls() {
