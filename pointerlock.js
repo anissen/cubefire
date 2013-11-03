@@ -1,5 +1,5 @@
 
-function lockPointer(controls) {
+function lockPointer(controls, clock) {
   var havePointerLock = 'pointerLockElement' in document || 'mozPointerLockElement' in document || 'webkitPointerLockElement' in document;
 
   if (havePointerLock) {
@@ -9,10 +9,12 @@ function lockPointer(controls) {
       if ( document.pointerLockElement === element || document.mozPointerLockElement === element || document.webkitPointerLockElement === element ) {
 
         controls.enabled = true;
+        clock.start();
         container.className = '';
         blocker.style.display = 'none';
       } else {
         controls.enabled = false;
+        clock.stop();
 
         container.className = 'blurred';
         blocker.style.display = '-webkit-box';

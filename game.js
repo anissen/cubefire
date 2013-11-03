@@ -32,14 +32,14 @@ function init() {
 
   // scene
   scene = new THREE.Scene();
-  scene.fog = new THREE.Fog( 0x000000, 1, 300 );
+  scene.fog = new THREE.Fog( 0x000000, 0, 300 );
   //scene.fog.color.setHSL( 0.51, 0.4, 0.01 );
   scene.fog.color.setRGB( 1.0, 1.0, 1.0 );
 
   controls = new THREE.PointerLockControls( camera );
   scene.add( controls.getObject() );
 
-  lockPointer(controls);
+  lockPointer(controls, clock);
 
   projector = new THREE.Projector();
   raycaster = new THREE.Raycaster();
@@ -54,7 +54,7 @@ function init() {
   renderer.setSize( window.innerWidth, window.innerHeight );
   renderer.setClearColor( scene.fog.color, 1 );
   renderer.shadowMapEnabled = true;
-
+  renderer.shadowMapSoft = true;
 
   container.appendChild(renderer.domElement);
 
@@ -89,14 +89,14 @@ function setupFloor() {
 function setupCubes() {
   var cubeSize = 15; // 7
   var cube = new THREE.CubeGeometry( cubeSize, cubeSize, cubeSize );
-  var material = new THREE.MeshLambertMaterial();
+  var material = new THREE.MeshPhongMaterial({ color: 0xffffff });
 
   var mapXSize = 30;
   var mapZSize = 30;
-  for (var i = 0; i < 100; i++) {
-    var randX = Math.floor( Math.random() * mapXSize - mapXSize / 2 );
-    var randZ = Math.floor( Math.random() * mapZSize - mapZSize / 2 );
-    map[randX+':'+randZ] = Math.floor(Math.random() * 10);
+  for (var j = 0; j < 100; j++) {
+    var randx = Math.floor( Math.random() * mapXSize - mapXSize / 2 );
+    var randz = Math.floor( Math.random() * mapZSize - mapZSize / 2 );
+    map[randx+':'+randz] = Math.floor(Math.random() * 5);
   }
   for (var i = 0; i < 300; i ++ ) {
     var cubeMaterial = material.clone(); // HACK to be able to highlight a single cube
@@ -133,19 +133,24 @@ function setupCubes() {
 }
 
 function setupLights() {
-  // lights
-  var ambient = new THREE.AmbientLight( 0xffffff );
-  // ambient.color.setHSL( 0.1, 0.3, 0.2 );
+  var ambient = new THREE.AmbientLight( 0xeeeeee );
   scene.add( ambient );
 
-  var light = new THREE.DirectionalLight( 0x444444, 3 );
-  light.position.set(-10, 100, 10);
-  light.target.position.set( 0, 0, 0 );
-  light.shadowCameraNear = 0.01;
-  light.castShadow = true;
-  light.shadowDarkness = 0.5;
-  light.shadowCameraVisible = true;
-  scene.add(light);
+  var directionalLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
+  directionalLight.position.set( -10, 100, 10 );
+  directionalLight.castShadow = true;
+
+  directionalLight.shadowCameraNear = 1;
+  directionalLight.shadowCameraFar = 200;//camera.far;
+  directionalLight.shadowCameraFov = 40;
+
+  directionalLight.shadowMapBias = 0.1;
+  directionalLight.shadowMapDarkness = 0.2;
+  directionalLight.shadowMapWidth = 2*512;
+  directionalLight.shadowMapHeight = 2*512;
+
+  directionalLight.shadowCameraVisible = false;
+  scene.add( directionalLight );
 
 
   /*
