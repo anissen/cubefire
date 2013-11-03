@@ -16,6 +16,8 @@ var cubes = [];
 var tweens = [];
 //var timeline = new TimelineLite({ onComplete:function() { console.log('done'); } });
 
+var splatTexture = THREE.ImageUtils.loadTexture( 'textures/splat/splat1.png' );
+
 init();
 animate();
 
@@ -250,8 +252,28 @@ function shoot() {
   var trailColor = (target ? 0x990000 : 0xaaaaff);
   addBulletTrail(cameraPos, targetPos, trailColor);
 
-  if (target)
-    target.object.material.ambient.setHex(0xff0000);
+  if (target) {
+    //target.object.material.ambient.setHex(0xff0000);
+    addSplat(target);
+    console.log(target);
+  }
+}
+
+function addSplat(target) {
+  var geo1 = new THREE.PlaneGeometry( 10, 10 );
+
+  var material = new THREE.MeshBasicMaterial( { map: splatTexture, color: 0x00ff00 } );
+  material.transparent = true;
+  
+  // material.blending = THREE.AdditiveBlending;
+  // material.blendSrc = THREE.DstAlphaBlending;
+  // material.blendDst = THREE.SrcColorBlending;
+  // material.blendEquation = THREE.AddEquation;
+
+  var mesh = new THREE.Mesh(geo1, material);
+  mesh.position = target.point.clone().add(target.face.normal.clone().multiplyScalar(0.5 * Math.random()));
+  mesh.lookAt(target.point.clone().add(target.face.normal.clone().multiplyScalar(10)));
+  scene.add(mesh);
 }
 
 function getShotObject(pos, dir) {
