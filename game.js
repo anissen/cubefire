@@ -13,6 +13,7 @@ var crossairSprite;
 
 var map = {};
 var cubes = [];
+var enemies = [];
 var tweens = [];
 //var timeline = new TimelineLite({ onComplete:function() { console.log('done'); } });
 
@@ -49,6 +50,7 @@ function init() {
   // world
   setupFloor();
   setupCubes();
+  setupEnemies();
   setupLights();
 
   // renderer
@@ -101,8 +103,7 @@ function setupCubes() {
     map[randx+':'+randz] = Math.floor(Math.random() * 5);
   }
   for (var i = 0; i < 300; i ++ ) {
-    var cubeMaterial = material.clone(); // HACK to be able to highlight a single cube
-    var mesh = new THREE.Mesh( cube, cubeMaterial );
+    var mesh = new THREE.Mesh( cube, material );
     var randX = Math.floor( Math.random() * mapXSize - mapXSize / 2 );
     var randZ = Math.floor( Math.random() * mapZSize - mapZSize / 2 );
     mesh.position.x = randX * cubeSize;
@@ -131,6 +132,41 @@ function setupCubes() {
       ease: Elastic.easeOut
     }));
     */
+  }
+}
+
+function setupEnemies() {
+  var cubeSize = 15;
+  var cube = new THREE.CubeGeometry( 10, 10, 10 );
+  var color = new THREE.Color();
+  color.setRGB(Math.random(), Math.random(), Math.random());
+  var material = new THREE.MeshPhongMaterial({ color: 0x0000ff, ambient: 0x8888ff });
+
+  var mapXSize = 30;
+  var mapZSize = 30;
+  for (var i = 0; i < 30; i ++ ) {
+    var cubeMaterial = material.clone();
+    var mesh = new THREE.Mesh( cube, cubeMaterial );
+    var randX = Math.floor( Math.random() * mapXSize - mapXSize / 2 );
+    var randZ = Math.floor( Math.random() * mapZSize - mapZSize / 2 );
+    mesh.position.x = randX * cubeSize;
+    mesh.position.z = randZ * cubeSize;
+    var height = map[randX+':'+randZ] || 0;
+    map[randX+':'+randZ] = height + 1;
+    mesh.position.y = height * cubeSize + 10 / 2;
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    //console.log(mesh.position);
+
+    enemies.push(mesh);
+
+    var outlineMaterial2 = new THREE.MeshBasicMaterial( { color: 0x000000, side: THREE.BackSide } );
+    var outlineMesh2 = new THREE.Mesh( cube, outlineMaterial2 );
+    outlineMesh2.scale.multiplyScalar(1.02);
+
+    mesh.add(outlineMesh2);
+
+    scene.add(mesh);
   }
 }
 
@@ -246,16 +282,20 @@ function shoot() {
   var cameraDir = controls.getDirection();
 
   // find intersections
-  var target = getShotObject(cameraPos, cameraDir);
+  var hitCubes = getShotObjects(cameraPos, cameraDir, cubes);
+  var hitEnemies = getShotObjects(cameraPos, cameraDir, enemies);
 
-  var targetPos = (target ? target.point : cameraPos.clone().add(cameraDir.multiplyScalar(1000)));
-  var trailColor = (target ? 0x990000 : 0xaaaaff);
-  addBulletTrail(cameraPos, targetPos, trailColor);
+  var rayEndPos = (hitCubes.length ? hitCubes[0].point : cameraPos.clone().add(cameraDir.multiplyScalar(1000)));
+  var trailColor = (hitEnemies.length ? 0x990000 : 0xaaaaff);
+  addBulletTrail(cameraPos, rayEndPos, trailColor);
 
-  if (target) {
-    //target.object.material.ambient.setHex(0xff0000);
-    addSplat(target);
-    console.log(target);
+  hitEnemies.forEach(function(enemy) {
+    //scene.remove(enemy.object);
+    enemy.object.material.ambient.setHex(0xff0000);
+  });
+
+  if (hitCubes.length) {
+    addSplat(hitCubes[0]);
   }
 }
 
@@ -276,11 +316,11 @@ function addSplat(target) {
   scene.add(mesh);
 }
 
-function getShotObject(pos, dir) {
+function getShotObjects(pos, dir, objects) {
   raycaster.set(pos, dir);
 
-  var intersects = raycaster.intersectObjects(cubes);
-  return intersects[0];
+  var intersects = raycaster.intersectObjects(objects);
+  return intersects;
 }
 
 function addBulletTrail(startPos, endPos, color) {
