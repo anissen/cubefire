@@ -15,6 +15,7 @@ var map = {};
 var cubes = [];
 var enemies = [];
 var tweens = [];
+var trails = [];
 //var timeline = new TimelineLite({ onComplete:function() { console.log('done'); } });
 
 var splatTexture = THREE.ImageUtils.loadTexture( 'textures/splat/splat1.png' );
@@ -158,13 +159,19 @@ function setupEnemies() {
     mesh.receiveShadow = true;
     //console.log(mesh.position);
 
+    mesh.velocity = new THREE.Vector3();
     enemies.push(mesh);
 
     var outlineMaterial2 = new THREE.MeshBasicMaterial( { color: 0x000000, side: THREE.BackSide } );
     var outlineMesh2 = new THREE.Mesh( cube, outlineMaterial2 );
     outlineMesh2.scale.multiplyScalar(1.02);
-
     mesh.add(outlineMesh2);
+
+    var noseMaterial = new THREE.MeshPhongMaterial({ color: 0x0000ff, ambient: 0xff88ff });
+    var noseMesh = new THREE.Mesh( cube, noseMaterial );
+    noseMesh.position.z += cubeSize / 3;
+    noseMesh.scale.multiplyScalar(0.25);
+    mesh.add(noseMesh);
 
     scene.add(mesh);
   }
@@ -284,18 +291,22 @@ function shoot() {
   // find intersections
   var hitCubes = getShotObjects(cameraPos, cameraDir, cubes);
   var hitEnemies = getShotObjects(cameraPos, cameraDir, enemies);
+  var didHitCube = hitCubes.length > 0;
+  var didHitEnemy = hitEnemies.length > 0 && (!didHitCube || hitEnemies[0].distance < hitCubes[0].distance);
 
-  var rayEndPos = (hitCubes.length ? hitCubes[0].point : cameraPos.clone().add(cameraDir.multiplyScalar(1000)));
-  var trailColor = (hitEnemies.length ? 0x990000 : 0xaaaaff);
+  var rayEndPos = (didHitCube ? hitCubes[0].point : cameraPos.clone().add(cameraDir.multiplyScalar(1000)));
+  var trailColor = (didHitEnemy ? 0x990000 : 0xaaaaff);
   addBulletTrail(cameraPos, rayEndPos, trailColor);
 
-  hitEnemies.forEach(function(enemy) {
-    //scene.remove(enemy.object);
-    enemy.object.material.ambient.setHex(0xff0000);
-  });
-
-  if (hitCubes.length) {
+  if (didHitCube)
     addSplat(hitCubes[0]);
+
+  if (didHitEnemy) {
+    hitEnemies.forEach(function(enemy) {
+      //scene.remove(enemy.object);
+      enemy.object.material.ambient.setHex(0xff0000);
+      enemy.object.dead = true;
+    });
   }
 }
 
@@ -328,11 +339,12 @@ function addBulletTrail(startPos, endPos, color) {
   var vertArray = lineGeometry.vertices;
   vertArray.push(startPos, endPos);
   lineGeometry.computeLineDistances();
-  var lineMaterial = new THREE.LineBasicMaterial( { color: color, linewidth: 5, fog: true } );
+  var lineMaterial = new THREE.LineBasicMaterial( { color: color, linewidth: 5, fog: true, transparent: true } );
   // var lineMaterial2 = new THREE.LineBasicMaterial( { color: 0x000000, linewidth: 7, fog: true } );
   var line = new THREE.Line( lineGeometry, lineMaterial );
   // var line2 = new THREE.Line( lineGeometry, lineMaterial2 );
   scene.add(line);
+  trails.push(line);
   // scene.add(line2);
 }
 
@@ -353,10 +365,34 @@ function updateControls() {
   controls.update(clock.getElapsedTime());
 }
 
+function update() {
+  var delta = clock.getDelta();
+  enemies.forEach(function(enemy) {
+    if (enemy.dead) return;
+    var correctedVelocity = enemy.velocity.clone().multiplyScalar(delta);
+    enemy.position.add(correctedVelocity);
+    enemy.lookAt(enemy.position.clone().add(correctedVelocity));
+
+    var velocityChange = new THREE.Vector3(Math.random() - 0.5, (Math.random() - 0.6) / 2, Math.random() - 0.5);
+    if (enemy.position.y < 30)
+      velocityChange.y += 0.1;
+    if (enemy.position.y > 100)
+      velocityChange.y -= 0.1;
+    enemy.velocity.add(velocityChange.multiplyScalar(500));
+  });
+
+  trails.forEach(function(trail) {
+    trail.material.opacity -= delta * 20;
+    if (trail.material.opacity < 0.0)
+      scene.remove(trail);
+  });
+}
+
 function animate() {
   requestAnimationFrame( animate );
 
   updateControls();
+  update();
   render();
   stats.update();
 }
