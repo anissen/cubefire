@@ -16,6 +16,10 @@ var cubes = [];
 var enemies = [];
 var tweens = [];
 var trails = [];
+
+var particleGroup;
+var pos = new THREE.Vector3();
+
 //var timeline = new TimelineLite({ onComplete:function() { console.log('done'); } });
 
 var splatTexture = THREE.ImageUtils.loadTexture( 'textures/splat/splat1.png' );
@@ -53,6 +57,7 @@ function init() {
   setupCubes();
   setupEnemies();
   setupLights();
+  setupParticleSystem();
 
   // renderer
   renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true } );
@@ -248,6 +253,44 @@ function setupCrossair() {
   scene.add(crossairSprite);
 }
 
+function setupParticleSystem() {
+  particleGroup = new ShaderParticleGroup({
+    texture: THREE.ImageUtils.loadTexture('textures/smokeparticle.png'), maxAge: 0.5, blending: THREE.AdditiveBlending
+  });
+
+  var emitterSettings = {
+    type: 'sphere',
+    positionSpread: new THREE.Vector3(1, 1, 1),
+    radius: 2,
+    speed: 0.01,
+    size: 1,
+    sizeSpread: 0.01,
+    sizeEnd: 0,
+    opacityStart: 1,
+    opacityEnd: 0,
+    colorStart: new THREE.Color('red'),
+    colorSpread: new THREE.Vector3(0, 10, 0),
+    colorEnd: new THREE.Color('black'),
+    particlesPerSecond: 2000,
+    alive: 0,
+    emitterDuration: 0.5
+  };
+  particleGroup.addPool(100, emitterSettings, false);
+
+    // Add particle group to scene.
+  scene.add( particleGroup.mesh );
+}
+
+// Trigger an explosion and random co-ords.
+function createExplosion() {
+  function rand( size ) {
+            return size * Math.random() - (size/2);
+        }
+    var num = 150;
+    particleGroup.triggerPoolEmitter( 1, (pos.set( rand(num/10), rand(num/10), rand(num/10) )) );
+    console.log('explosion!');
+}
+
 /*
 function lensFlareUpdateCallback( object ) {
   var f, fl = object.lensFlares.length;
@@ -304,6 +347,7 @@ function shoot() {
   if (didHitEnemy) {
     hitEnemies.forEach(function(enemy) {
       scene.remove(enemy.object);
+      createExplosion();
     });
   }
 }
@@ -363,8 +407,10 @@ function updateControls() {
   controls.update(clock.getElapsedTime());
 }
 
-function update() {
-  var delta = clock.getDelta();
+// Add a mousedown listener. When mouse is clicked, a new explosion will be created.
+document.addEventListener( 'mousedown', createExplosion, false );
+
+function update(delta) {
   enemies.forEach(function(enemy) {
     if (enemy.dead) return;
     var correctedVelocity = enemy.velocity.clone().multiplyScalar(delta);
@@ -389,14 +435,16 @@ function update() {
 }
 
 function animate() {
-  requestAnimationFrame( animate );
+  requestAnimationFrame(animate);
 
+  var delta = clock.getDelta();
   updateControls();
-  update();
-  render();
+  update(delta/100);
+  render(delta);
   stats.update();
 }
 
-function render() {
-  renderer.render( scene, camera );
+function render(delta) {
+  particleGroup.tick(delta);
+  renderer.render(scene, camera);
 }
