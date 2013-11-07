@@ -303,9 +303,7 @@ function shoot() {
 
   if (didHitEnemy) {
     hitEnemies.forEach(function(enemy) {
-      //scene.remove(enemy.object);
-      enemy.object.material.ambient.setHex(0xff0000);
-      enemy.object.dead = true;
+      scene.remove(enemy.object);
     });
   }
 }
@@ -381,10 +379,12 @@ function update() {
     enemy.velocity.add(velocityChange.multiplyScalar(500));
   });
 
-  trails.forEach(function(trail) {
-    trail.material.opacity -= delta * 20;
-    if (trail.material.opacity < 0.0)
+  trails.forEach(function(trail, index) {
+    trail.material.opacity -= delta * 200;
+    if (trail.material.opacity < 0.0) {
       scene.remove(trail);
+      trails.splice(index, 1);
+    }
   });
 }
 
